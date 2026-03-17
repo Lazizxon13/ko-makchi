@@ -68,7 +68,8 @@ async def handle_text(message: types.Message):
         # Gemini 1.5 Flash (Лимити катта модел)
         prompt = f"Siz Greenleaf mutaxassisiz. Mahsulot: {nomi}, Kodi: {kod}, Narxi: {formatted_price} so'm, Balli: {ball} PV. Buni o'zbekcha chiroyli reklama posti qiling."
         
-        model = genai.GenerativeModel('gemini-1.5-flash')
+       # Янги ва энг барқарор қатор:
+model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         await message.reply(response.text)
 
