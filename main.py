@@ -49,7 +49,7 @@ async def handle_text(message: types.Message):
     try:
         # Модел номини 'gemini-1.5-flash' қилиш хавфсизроқ (404 бермайди)
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
+            model_name='gemini-2.5-flash',
             system_instruction=instruction
         )
         response = model.generate_content(message.text)
