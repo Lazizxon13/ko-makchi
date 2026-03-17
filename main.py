@@ -82,7 +82,8 @@ async def handle_text(message: types.Message):
         📞 Tel: +998 33 993 4070
         """
         
-        model = genai.GenerativeModel('gemini-2.5-flash')
+       # main.py ичидаги мана шу қаторни топинг ва ўзгартиринг:
+        model = genai.GenerativeModel('gemini-1.5-flash')
         response = model.generate_content(instruction)
         await message.reply(response.text)
 
