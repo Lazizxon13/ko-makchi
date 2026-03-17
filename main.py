@@ -22,16 +22,15 @@ logging.basicConfig(level=logging.INFO)
 def load_catalog():
     global df
     try:
-        # Jadvalni o'qishda xato qatorlarni tashlab o'tamiz
         df = pd.read_csv(SHEET_CSV_URL, on_bad_lines='skip', sep=',')
         df.columns = df.columns.str.strip()
-        logging.info(f"Katalog yuklandi: {len(df)} ta mahsulot. Ustunlar: {list(df.columns)}")
+        logging.info(f"Katalog yuklandi: {len(df)} ta mahsulot.")
     except Exception as e:
         logging.error(f"Jadval yuklashda xato: {e}")
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer("Assalomu alaykum! Greenleaf Rishton botingiz Gemini 2.5 Flash'da ishga tushdi! 😊")
+    await message.answer("Assalomu alaykum! Greenleaf Rishton botingiz Gemini 2.5 Flash'da tayyor! 😊")
 
 @dp.message()
 async def handle_text(message: types.Message):
@@ -42,8 +41,6 @@ async def handle_text(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
     try:
-        # 1. QIDIRUV (Kodni va Nomini topish)
-        # Jadvilingizdagi ustun nomlarini tekshirib olamiz
         kod_col = 'Номер / Код'
         nomi_col = 'Наименование'
         
@@ -53,36 +50,42 @@ async def handle_text(message: types.Message):
         ].head(1)
 
         if match.empty:
-            await message.reply("Mahsulot topilmadi. Iltimos, kodni yoki nomini to'g'ri yozganingizni tekshiring. 😊")
+            await message.reply("Mahsulot topilmadi. Kodni tekshirib qayta yozing. 😊")
             return
 
         product = match.iloc[0].to_dict()
         
-        # 2. GEMINI 2.5 FLASH UCHUN PROMPT
+        # Narxni chiroyli formatlash (31 000 ko'rinishida)
+        raw_price = product.get('Розничная цена', 0)
+        try:
+            formatted_price = f"{float(raw_price):,.0f}".replace(",", " ")
+        except:
+            formatted_price = str(raw_price)
+
         instruction = f"""
-        Siz Greenleaf mutaxassisiz. Quyidagi ma'lumotni chiroyli o'zbekchada reklama posti qiling:
+        Siz Greenleaf mutaxassisiz. Quyidagi ma'lumotni o'zbekchada chiroyli reklama posti qiling:
         ✨ Greenleaf Sifati ✨
         🧼 Mahsulot: {product.get(nomi_col)}
         🆔 Kod: {product.get(kod_col)}
-        💰 Narxi: {product.get('Розничная цена', 'Noma'lum')} so'm
+        💰 Narxi: {formatted_price} so'm
         💎 Ball: {product.get('Баллы', 0)} PV
         ✅ [Mahsulot haqida qisqa va foydali tavsiya yozing]
         🛒 Buyurtma: https://t.me/ORIFFFFFFFFFF
         📞 Tel: +998 33 993 4070
         """
         
-        # MODEL NOMINI 2.5 FLASH GA O'ZGARTIRDIK
+        # Gemini 2.5 Flash ishlatilmoqda
         model = genai.GenerativeModel('gemini-2.5-flash')
         response = model.generate_content(instruction)
         await message.reply(response.text)
 
     except Exception as e:
-        logging.error(f"Xatolik tafsiloti: {e}")
+        logging.error(f"Xato: {e}")
         await message.answer("Biroz kuting, tizim yangilanmoqda...")
 
 # --- RENDER SERVER ---
 async def handle_ping(request):
-    return web.Response(text="Bot is running on Gemini 2.5!")
+    return web.Response(text="Bot is Live!")
 
 async def main():
     load_catalog()
@@ -90,6 +93,7 @@ async def main():
     runner = web.AppRunner(app); await runner.setup()
     port = int(os.environ.get("PORT", 10000))
     await web.TCPSite(runner, '0.0.0.0', port).start()
+    
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
