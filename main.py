@@ -9,10 +9,11 @@ from aiohttp import web
 
 # --- SOZLAMALAR ---
 TELEGRAM_TOKEN = "8275086123:AAFM8iifVbe8cidhE07hoEbQ0svwqvRB8ac"
+# Gemini API kalitingizni shu yerga qo'ying
 GOOGLE_API_KEY = "AIzaSyC5a0Rk9TuIpN0b4RIBYtx6RM0peLxSe1U"
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQAYDb5of_bCQCIBVpDj6VL3JMterNGELwCQDkPxtdyjLw5X8ODIS5oegBYWv3wUUBp2knWYUHvQDW-/pub?gid=1939417886&single=true&output=csv"
 
-# --- GLOBAL ---
+# --- GLOBAL O'ZGARUVCHILAR ---
 df = None
 genai.configure(api_key=GOOGLE_API_KEY)
 bot = Bot(token=TELEGRAM_TOKEN)
@@ -30,7 +31,7 @@ def load_catalog():
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer("Assalomu alaykum! Greenleaf Rishton botingiz Gemini 2.5 Flash'da tayyor! 😊")
+    await message.answer("Assalomu alaykum! Greenleaf Rishton botingiz Gemini 2.5 Flash'da ishga tushdi! 🚀")
 
 @dp.message()
 async def handle_text(message: types.Message):
@@ -41,14 +42,12 @@ async def handle_text(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
     try:
-        # Ustunlarni aniqlash
         cols = list(df.columns)
         kod_col = next((c for c in cols if 'код' in c.lower() or 'номер' in c.lower()), cols[1])
         nomi_col = next((c for c in cols if 'наименование' in c.lower() or 'номи' in c.lower()), cols[2])
         narx_col = next((c for c in cols if 'цена' in c.lower() or 'нарх' in c.lower()), cols[3])
         ball_col = next((c for c in cols if 'балл' in c.lower() or 'pv' in c.lower()), cols[-1])
 
-        # Qidiruv
         match = df[
             df[kod_col].astype(str).str.lower().str.contains(query, na=False, regex=False) | 
             df[nomi_col].str.lower().str.contains(query, na=False, regex=False)
@@ -60,7 +59,7 @@ async def handle_text(message: types.Message):
 
         product = match.iloc[0].to_dict()
         
-        # Narxni tozalash va formatlash (Xatosiz variant)
+        # Narxni tozalash
         raw_price = str(product.get(narx_col, '0'))
         clean_price = "".join(filter(str.isdigit, raw_price))
         try:
@@ -68,7 +67,6 @@ async def handle_text(message: types.Message):
         except:
             formatted_price = raw_price
 
-        # Gemini 2.5 Flash Prompt
         instruction = f"""
         Siz Greenleaf mutaxassisiz. Quyidagi ma'lumotni o'zbekchada reklama posti qiling:
         ✨ Greenleaf Sifati ✨
@@ -76,7 +74,7 @@ async def handle_text(message: types.Message):
         🆔 Kod: {product.get(kod_col)}
         💰 Narxi: {formatted_price} so'm
         💎 Ball: {product.get(ball_col, 0)} PV
-        ✅ [Foydali tavsiya yozing]
+        ✅ [Mahsulot haqida juda qisqa va qiziqarli tavsiya yozing]
         🛒 Buyurtma: https://t.me/ORIFFFFFFFFFF
         📞 Tel: +998 33 993 4070
         """
@@ -89,17 +87,20 @@ async def handle_text(message: types.Message):
         logging.error(f"Xato: {e}")
         await message.answer("Biroz kuting, ma'lumot qidirilmoqda...")
 
-# --- RENDER SERVER ---
+# --- RENDER WEB SERVER ---
 async def handle_ping(request):
     return web.Response(text="Live")
 
 async def main():
     load_catalog()
-    app = web.Application(); app.router.add_get('/', handle_ping)
-    runner = web.AppRunner(app); await runner.setup()
+    app = web.Application()
+    app.router.add_get('/', handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
     port = int(os.environ.get("PORT", 10000))
     await web.TCPSite(runner, '0.0.0.0', port).start()
     
+    # Conflict xatosini yo'qotish uchun webhookni tozalash
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
