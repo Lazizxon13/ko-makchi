@@ -1,1 +1,5 @@
-
+aiogram
+pandas
+google-generativeai
+aiohttp
+aiohttp-socks
