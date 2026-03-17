@@ -52,12 +52,16 @@ async def handle_text(message: types.Message):
     Katalog: {cached_catalog}
     """
     
-    try:
-        model = genai.GenerativeModel('gemini-2.5-flash', system_instruction=instruction)
+try:
+        # Модел номини барқарорроқ версияга алмаштирамиз
+        model = genai.GenerativeModel('gemini-1.5-flash', system_instruction=instruction)
         response = model.generate_content(message.text)
         await message.reply(response.text)
-    except:
-        await message.answer("Biroz kuting...")
+    except Exception as e:
+        # Энг муҳими: хатони логларга чиқарамиз
+        print(f"!!! ХАТОЛИК ЮЗ БЕРДИ: {e}") 
+        logging.error(f"Xato tafsiloti: {e}")
+        await message.answer("Маълумот олишда техник узилиш бўлди. Бироздан сўнг қайта уриниб кўринг.")
 
 # --- RENDER UCHUN МАХСУС ВЕБ СЕРВЕР ---
 async def handle_ping(request):
