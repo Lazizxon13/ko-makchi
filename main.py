@@ -31,7 +31,7 @@ def load_catalog():
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    await message.answer("Assalomu alaykum! Greenleaf Rishton botingiz ТОЗАЛАНДИ ва ишга тушди! 🚀")
+    await message.answer("Assalomu alaykum! Greenleaf Rishton botingiz ишга тушди! 🚀")
 
 @dp.message()
 async def handle_text(message: types.Message):
@@ -65,16 +65,15 @@ async def handle_text(message: types.Message):
         except:
             formatted_price = narx_raw
 
-        # Gemini 1.5 Flash (Лимити катта модел)
+        # Gemini Pro (Универсал модел)
         prompt = f"Siz Greenleaf mutaxassisiz. Mahsulot: {nomi}, Kodi: {kod}, Narxi: {formatted_price} so'm, Balli: {ball} PV. Buni o'zbekcha chiroyli reklama posti qiling."
         
-       # Янги ва энг барқарор қатор:
-model = genai.GenerativeModel('gemini-pro')
+        model = genai.GenerativeModel('gemini-pro')
         response = model.generate_content(prompt)
         await message.reply(response.text)
 
+    # МАНА ШУ ҚАТОР ЎЧИБ КЕТГАН ЭДИ:
     except Exception as e:
-        # Хато бўлса, уни аниқ кўрамиз
         logging.error(f"Xato: {e}")
         await message.answer(f"❌ Хатолик: {str(e)}")
 
@@ -91,7 +90,6 @@ async def main():
     port = int(os.environ.get("PORT", 10000))
     await web.TCPSite(runner, '0.0.0.0', port).start()
     
-    # ЭНГ МУҲИМИ: Conflict хатосини йўқотиш учун эски алоқаларни узамиз
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
