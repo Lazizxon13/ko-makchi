@@ -42,28 +42,21 @@ async def handle_text(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
     try:
-        # Устун номларини аниқ кўрсатамиз
-        kod_col = 'Номер / Код'
-        nomi_col = 'Наименование'
-        
-        # Қидирув
-        match = df[
-            df[kod_col].astype(str).str.lower().str.contains(query, na=False) | 
-            df[nomi_col].str.lower().str.contains(query, na=False)
-        ].head(1)
+        # Нархни топамиз ва уни рақамга ўгиришга ҳаракат қиламиз
+        raw_price = product.get('Розничная цена', 0)
+        try:
+            # Нархни чиройли форматга келтирамиз (масалан: 31 000)
+            formatted_price = f"{float(raw_price):,.0f}".replace(",", " ")
+        except:
+            # Агар хато бўлса, бошида қандай бўлса, шундай қолдирамиз
+            formatted_price = str(raw_price)
 
-        if match.empty:
-            await message.reply("Kechirasiz, bunday mahsulot topilmadi. Кодни тўғри ёзганингизни текширинг.")
-            return
-
-        product = match.iloc[0].to_dict()
-        
         prompt = f"""
         Siz Greenleaf mutaxassisiz. Quyidagi ma'lumotni o'zbekchada chiroyli reklama posti qiling:
         ✨ Greenleaf Sifati ✨
-        🧼 Mahsulot: {product.get(nomi_col)}
-        🆔 Kod: {product.get(kod_col)}
-        💰 Narxi: {product.get('Розничная цена', 'Noma'lum')} so'm
+        🧼 Mahsulot: {product.get('Наименование')}
+        🆔 Kod: {product.get('Номер / Код')}
+        💰 Narxi: {formatted_price} so'm
         💎 Ball: {product.get('Баллы', 0)} PV
         ✅ [Foydali tavsiya yozing]
         🛒 Buyurtma: https://t.me/ORIFFFFFFFFFF
@@ -75,7 +68,7 @@ async def handle_text(message: types.Message):
         await message.reply(response.text)
 
     except Exception as e:
-        logging.error(f"AI xatosi: {e}")
+        print(f"Xatolik: {e}")
         await message.answer("Biroz kuting, tizim yangilanmoqda...")
 
 # --- RENDER PORT ---
