@@ -2,3 +2,4 @@ aiogram
 pandas
 google-generativeai
 aiohttp
+openai
