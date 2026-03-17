@@ -7,10 +7,10 @@ from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiohttp import web
 
-# --- SOZLAMALAR ---
+# main.py ичидаги созламалар қисми мана бундай бўлсин:
 TELEGRAM_TOKEN = "8275086123:AAFM8iifVbe8cidhE07hoEbQ0svwqvRB8ac"
-# Gemini API kalitingizni shu yerga qo'ying
-GOOGLE_API_KEY = "AIzaSyC5a0Rk9TuIpN0b4RIBYtx6RM0peLxSe1U"
+# Калитни тизимдан автоматик оладиган қиламиз:
+GOOGLE_API_KEY = os.environ.get("GOOGLE_API_KEY")
 SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQAYDb5of_bCQCIBVpDj6VL3JMterNGELwCQDkPxtdyjLw5X8ODIS5oegBYWv3wUUBp2knWYUHvQDW-/pub?gid=1939417886&single=true&output=csv"
 
 # --- GLOBAL O'ZGARUVCHILAR ---
