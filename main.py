@@ -45,22 +45,36 @@ async def handle_text(message: types.Message):
     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
     try:
-        cols = list(df.columns)
-        kod_col = next((c for c in cols if 'код' in c.lower() or 'номер' in c.lower()), cols[1])
-        nomi_col = next((c for c in cols if 'наименование' in c.lower() or 'номи' in c.lower()), cols[2])
-        narx_col = next((c for c in cols if 'цена' in c.lower() or 'нарх' in c.lower()), cols[3])
-        ball_col = next((c for c in cols if 'балл' in c.lower() or 'pv' in c.lower()), cols[-1])
-
-        match = df[
-            df[kod_col].astype(str).str.lower().str.contains(query, na=False, regex=False) | 
-            df[nomi_col].str.lower().str.contains(query, na=False, regex=False)
-        ].head(1)
+        # 1. Жадвалдан қидириш
+        mask = df.apply(lambda row: row.astype(str).str.lower().str.contains(query, na=False).any(), axis=1)
+        match = df[mask].head(1)
 
         if match.empty:
-            await message.reply(f"'{query}' bo'yicha mahsulot topilmadi. 😊")
+            await message.reply(f"'{query}' бўйича маҳсулот топилмади. 😊")
             return
 
         product = match.iloc[0].to_dict()
+        
+        # 2. Устунларни аниқлаш
+        cols = list(product.keys())
+        nomi = product.get(next((c for c in cols if 'наименование' in c.lower()), cols[1]), "Номсиз")
+        kod = product.get(next((c for c in cols if 'код' in c.lower()), cols[0]), "Кодсиз")
+        narx = product.get(next((c for c in cols if 'цена' in c.lower()), cols[2]), "0")
+
+        # 3. Gemini 1.5 Flash га юбориш (Лимити каттароқ модел)
+        instruction = f"Siz Greenleaf mutaxassisiz. Mahsulot: {nomi}, Kodi: {kod}, Narxi: {narx}. Buni o'zbekcha chiroyli reklama qiling."
+        
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        response = model.generate_content(instruction)
+        await message.reply(response.text)
+
+    except Exception as e:
+        # Агар лимит тугаса, бот "Кутинг" демайди, аниқ айтади
+        if "429" in str(e):
+            await message.answer("⚠️ Кечирасиз, ҳозирча бепул сўровлар лимити тугади. 1 дақиқадан сўнг қайта уриниб кўринг.")
+        else:
+            logging.error(f"Xato: {e}")
+            await message.answer("Маълумот қидиришда техник узилиш бўлди.")
         
         # Narxni tozalash
         raw_price = str(product.get(narx_col, '0'))
@@ -71,7 +85,7 @@ async def handle_text(message: types.Message):
             formatted_price = raw_price
 
         instruction = f"""
-        Siz Greenleaf mutaxassisiz. Quyidagi ma'lumotni o'zbekchada reklama posti qiling:
+        Siz Greenleaf mutaxasisisiz. Quyidagi ma'lumotni o'zbekchada reklama posti qiling:
         ✨ Greenleaf Sifati ✨
         🧼 Mahsulot: {product.get(nomi_col)}
         🆔 Kod: {product.get(kod_col)}
