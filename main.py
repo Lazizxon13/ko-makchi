@@ -116,20 +116,29 @@ async def handle_ping(request):
     return web.Response(text="Live")
 
 async def main():
+    # Katalogni yuklash
     load_catalog()
 
+    # Web server sozlash
     app = web.Application()
     app.router.add_get('/', handle_ping)
     runner = web.AppRunner(app)
     await runner.setup()
 
     port = int(os.environ.get("PORT", 10000))
-    await web.TCPSite(runner, '0.0.0.0', port).start()
-    logging.info(f"Web server {port}-portda ishga tushdi.")
+    site = web.TCPSite(runner, '0.0.0.0', port)
+    await site.start()
+    logging.info(f"✅ Web server {port}-portda ishga tushdi.")
 
+    # Botni sozlash
     await bot.delete_webhook(drop_pending_updates=True)
-    logging.info("Bot polling boshlandi...")
-    await dp.start_polling(bot)
+    logging.info("✅ Bot polling boshlandi...")
+
+    # Ikkalasini bir vaqtda ishga tushirish
+    await asyncio.gather(
+        dp.start_polling(bot),
+        asyncio.Event().wait()  # Web serverni tirik ushlab turadi
+    )
 
 if __name__ == "__main__":
     asyncio.run(main())
